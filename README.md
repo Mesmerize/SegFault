@@ -18,3 +18,9 @@ How to Run the Program:
 
     - Compile with gcc -v sudoku.c
     - then run ./a.out tests/[filename of grid]
+
+Tasks (After Meeting):
+
+    - Phi:
+    - Erika:
+    - Brandon:
