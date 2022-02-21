@@ -42,6 +42,11 @@ void parse_args(int argc, char *argv[])
     }
 }
 
+// Part A: Function to check whether or not input is a valid Sudoku
+void input_check() {
+    
+}
+
 int main(int argc, char *argv[])
 {
 
