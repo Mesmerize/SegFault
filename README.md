@@ -13,3 +13,8 @@ Starter code for the sudoku project.
     - Check each of the sudoko properties with a different thread for pt1
     - Check each of the sudoko properties with a different process for pt2
 
+
+How to Run the Program:
+
+    - Compile with gcc -v sudoku.c
+    - then run ./a.out tests/[filename of grid]
