@@ -21,6 +21,6 @@ How to Run the Program:
 
 Tasks (After Meeting):
 
-    - Phi:
-    - Erika:
-    - Brandon:
+    - Phi: Printing of grid appropriately
+    - Erika: Validation checking of rows and columns 
+    - Brandon: Initialize Parsing of stdin grid + threads
