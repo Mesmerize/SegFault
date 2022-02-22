@@ -23,4 +23,4 @@ Tasks (After Meeting):
 
     - Phi: Printing of grid appropriately
     - Erika: Validation checking of rows and columns 
-    - Brandon: Initialize Parsing of stdin grid + threads
+    - Brandon: Initialize Parsing of stdin grid + threads + create struct
