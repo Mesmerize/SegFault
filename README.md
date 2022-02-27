@@ -13,3 +13,14 @@ Starter code for the sudoku project.
     - Check each of the sudoko properties with a different thread for pt1
     - Check each of the sudoko properties with a different process for pt2
 
+
+How to Run the Program:
+
+    - Compile with gcc -v sudoku.c
+    - then run ./a.out tests/[filename of grid]
+
+Tasks (After Meeting):
+
+    - Phi: Printing of grid appropriately :3
+    - Erika: Validation checking of rows and columns 
+    - Brandon: Initialize Parsing of stdin grid + threads + create struct
