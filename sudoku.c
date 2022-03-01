@@ -9,6 +9,8 @@
 
 void readSudoku(int x[][9], FILE *in);
 void printSudoku(int x[][9]);
+int validateRows(int x[9][9]);
+int validateCols(int x[9][9]);
 
 /* These are the only two global variables allowed in your program */
 static int verbose = 0;
@@ -45,11 +47,6 @@ void parse_args(int argc, char *argv[])
     }
 }
 
-// Part A: Function to check whether or not input is a valid Sudoku
-void input_check() {
-    
-}
-
 int main(int argc, char *argv[])
 {
 
@@ -73,6 +70,8 @@ int main(int argc, char *argv[])
 
     readSudoku(sudoku_grid, stdin);
     printSudoku(sudoku_grid);
+    validateRows(sudoku_grid);
+    validateCols(sudoku_grid);
 
     return 0;
 }
@@ -119,6 +118,62 @@ void printSudoku(int x[][9]){
         // if we are on row 3 or row 5 we make a space
         if (2 == i || 5 == i) {
             printf("\n");
+        }
+    }
+}
+
+// Used to validate rows per 3x3 grid
+int validateRows(int x[9][9]) {
+    
+    // Traversing Rows
+    for(int i = 0; i < 9; i++) {
+
+        // Storing a zero at the last index of the array
+        // Used for validation later on
+        int rowValidate[9] = {0};  
+
+        // Traversing Columns
+        for(int j = 0; j < 9; j++) {
+
+            // Holds current integer value wherever our array is at
+            int currVal = x[i][j];
+
+            // Checking to see if our index is used or not
+            // Hence, using the compliment to check for dupes
+            // Example, currVal = x[0][1] ; row zero column 1
+            // currVal evaluates to 7
+            if(rowValidate[currVal - 1] == 0) {
+                rowValidate[currVal - 1] = 1;
+            } else {    // Checks if dupllicate or out of bounds
+                printf("Row: %d does not have the required values\n", i + 1);
+                return 0;
+            }
+        }
+    }
+}
+
+// Validating columns in the 3x3 grid
+int validateCols(int x[9][9]) {
+    // Traversing Rows
+    for(int i = 0; i < 9; i++) {
+
+        // Initialzing array to detect for duplicate values
+        int colValidate[9] = {0};
+
+        // Traversing columns
+        for(int j = 0; j < 9; j++) {
+
+            // Holds current value depending on row / col
+            int currVal = x[i][j];
+
+            // If the index is filled with a zero
+            // that means the index is not taken
+            if(colValidate[currVal - 1] == 0) {
+                colValidate[currVal - 1] = 1;   // fill index with 1 (true)
+            } else {    // Checks if dupllicate or out of bounds
+                printf("Column: %d does not have the required values\n", j + 1);
+                return 0;
+            }
         }
     }
 }
