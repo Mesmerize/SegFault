@@ -6,12 +6,14 @@
 #include <pthread.h>
 #include <ctype.h>
 #include <getopt.h>
+#include <stdbool.h>
 
 void readSudoku(int x[][9], FILE *in);
 void printSudoku(int x[][9]);
 int validateRows(int x[9][9]);
-int validateCols(int x[9][9]);  // Columns arent correctly updated after first level
-int validateSubGrids(int x[9][9]); // Broken due to incorrect cols / rows displaying
+int validateCols(int x[9][9]);
+int validateSubGrids(int x[9][9]); // Broken: Need to fix subgrid locator
+bool validSudokuGrid(int x[][9]);
 
 /* These are the only two global variables allowed in your program */
 static int verbose = 0;
@@ -74,6 +76,11 @@ int main(int argc, char *argv[])
     validateRows(sudoku_grid);
     validateCols(sudoku_grid);
     validateSubGrids(sudoku_grid);
+    if(validSudokuGrid(sudoku_grid)) {
+        printf("Valid Grid! \n");
+    } else {
+        printf("Not Valid Grid! \n");
+    }
 
     return 0;
 }
@@ -226,4 +233,8 @@ int validateSubGrids(int x[9][9]) {
         }
     }
 
+}
+
+bool validSudokuGrid(int x[][9]) {
+    return validateCols(x) && validateRows(x) && validateSubGrids(x); // if all true = valid 9x9, else = not valid 9x9
 }
