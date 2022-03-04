@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------
-
+Last Updated: 3/3/2022
             +-------------------------+
             | CS 450                  |
             | PROJECT: SUDOKU CHECKER |
@@ -23,6 +23,8 @@ Erika Mendoza < mendoeri@sonoma.edu>
 >> preparing your submission, other than man pages, course
 >> text, lecture notes, and course staff.
 
+*BRANDON EDIT HERE*
+
 
                THREADED SUDOKU CHECKER
                =======================
@@ -38,32 +40,41 @@ Erika Mendoza < mendoeri@sonoma.edu>
 >> A2: Copy here the declaration of each new or changed `struct', 
 >> `struct' member, global or static variable, `typedef', or enumeration.
 >> Identify the purpose of each in 2--25 words.
+Answer: NA
 
 ---- FUNCTIONS ----
 
 >> A3: Provide a prototype and documentation for each function
 >> you have introduced to support this portion of the project.
 >> Use the Google Style Guide for function documentation.
+Answer: TBA
+     
+     *Add more for threads*
 
 ---- ALGORITHMS ----
 
 >> A4: Briefly describe how you communicated to each worker thread
 >> the work it should perform, as a void *
+Answer: TBA
 
 >> A5: Briefly describe the function(s) run by each worker. Explain
 >> if any memory memory is shared among threads.
+Answer: TBA
 
 >> A6: Explain how the main thread knows when all the worker
 >> threads have completed their work.
+Answer: TBA
 
 >> A7: Explain how the main thread knows when a particular worker
 >> thread has reported a property is missing.
+Answer: TBA
 
 ---- RATIONALE ----
 
 >> A8: Explain how you ensured that your program has no resource leaks.
 >> List all the free-able resources and, for each, explain how you
 >> free them at the earliest possible time.
+Answer: TBA
 
 
                FORKING SUDOKU CHECKER
@@ -75,6 +86,7 @@ Erika Mendoza < mendoeri@sonoma.edu>
 >> forking design cannot be as parallel as your threaded
 >> solution? If not, how many child processes may be
 >> running concurrently at any time?
+Answer: TBA
 
 ---- DATA STRUCTURES ----
 
@@ -82,6 +94,7 @@ Erika Mendoza < mendoeri@sonoma.edu>
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 2--25 words.
 >> Do not repeat anything already described in A2.
+Answer: NA?
 
 ---- FUNCTIONS ----
 
@@ -89,24 +102,37 @@ Erika Mendoza < mendoeri@sonoma.edu>
 >> you have introduced to support this portion of the project.
 >> Use the Google Style Guide for function documentation.
 >> Do not repeat anything already described in A3.
+Answer:
+     void readSudoku(int x[][9], FILE *in); //reads in stdin values from the .txt files
+     void printSudoku(int x[][9]); //prints the stdin values from the .txt files in a grid
+     int validateRows(int x[9][9]); // checks each grid row for duplicate values (index 1 - 9)
+     int validateCols(int x[9][9]); // checks each grid column for duplicate values (indexes 1 - 9)
+     int validateSubGrids(int x[9][9]); //checks each sub grid (the 9 3x3 sections) for duplicate values
+     bool validSudokuGrid(int x[][9]); //calls the validateRows(), validateCols(), and validateSubGrids() functions and returns true -> indicating we have a valid sudoku
+     
+     *need to add more for the forking portion*
 
 ---- ALGORITHMS ----
 
 >> B4: Briefly describe the method of communicating with each child
 >> process and if the function(s) run by each child were different than
 >> the functions used by the child threads in Part A.
+Answer: TBA
 
 >> B5: Explain how the parent process knows when all the worker
 >> child have completed their work.
+Answer: TBA
 
 >> B6: Explain how the parent process knows when a particular worker
 >> child has reported a property is missing.
+Answer: TBA
 
 ---- RATIONALE ----
 
 >> B7: Explain how you ensured that your program has no resource leaks.
 >> List all the free-able resources and, for each, explain how you
 >> free them at the earliest possible time.
+Answer: TBA
 
 
 
