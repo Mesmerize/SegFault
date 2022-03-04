@@ -443,7 +443,7 @@ bool validSudokuGrid(int x[][9])
 //        fflush(stdout);
 //    }
 
-    printf("All Three Threads have exited using join(), exiting program....\n");
+    printf("All Threads have exited using join(), exiting program....\n");
     fflush(stdout);
     // exit(EXIT_SUCCESS);
 
