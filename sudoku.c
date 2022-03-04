@@ -13,9 +13,9 @@ void printSudoku(int x[][9]);
 int validateRows(int x[9][9]);
 int validateCols(int x[9][9]);
 int validateSubGrids(int x[9][9]);
-void *vr(int x[9][9]);
-void *vc(int x[9][9]);
-void *vs(int x[9][9]);
+void *vr(void *x);
+void *vc(void *);
+void *vs(void *);
 bool validSudokuGrid(int x[][9]);
 
 /* These are the only two global variables allowed in your program */
@@ -405,42 +405,48 @@ int validateSubGrids(int x[9][9])
     }
 }
 
-void *vr(int x[9][9]) {
+void *vr(void *x) {
     validateRows(x);
+    return NULL;    // Terminating Thread
 }
-void *vc(int x[9][9]) {
+void *vc(void *x) {
     validateCols(x);
+    return NULL;    // Terminating Thread
 }
-void *vs(int x[9][9]) {
+void *vs(void *x) {
     validateSubGrids(x);
+    return NULL;    // Terminating Thread
 }
 
 bool validSudokuGrid(int x[][9])
 {
-    int numThreads = 2;
-    pthread_t tid [2];
+    int numThreads = 3;
+    pthread_t tid[3];
 
-    for(int i = 0; i < 1; i++) {
-        if(i == 0) {
-            pthread_create(&tid[i], NULL, vr(x), NULL);
-        } else if(i == 1) {
-            pthread_create(&tid[i], NULL, vc(x), NULL);
-        } else {
-            pthread_create(&tid[i], NULL, vc(x), NULL);
-        }
-        printf("OOOGA BOOGA");
-    }
-    printf("OOOGA BOOGA");
-    for (int i = 0; i < numThreads; i++) {
-       pthread_join(tid[i], NULL);
-       printf("Thread %10x joined\n", tid[i]);
-       fflush(stdout);
-   }
+    pthread_create(&tid[0], NULL, vr, x);   // Creates thread to check if rows have digits 1 - 9 and if there are any duplicate numbers
+    pthread_create(&tid[1], NULL, vc, x);   // Creates thread to check if rows have digits 1 - 9 and if there are any duplicate numbers
+    pthread_create(&tid[2], NULL, vs, x);   // Creates thread to check if rows have digits 1 - 9 and if there are any duplicate numbers
 
-    printf("All Four Threads have exited using join(), exiting program....\n");
+    // for(int i = 0; i < numThreads; i++) {
+    //     if(i == 0) {
+    //         pthread_create(&tid[i], NULL, vr, x);   // Creates thread to check if rows have digits 1 - 9 and if there are any duplicate numbers
+    //     } else if(i == 1) {
+    //         pthread_create(&tid[i], NULL, vc, x);   // Creates thread to check if cols have digits 1 - 9 and if there are any duplicate numbers
+    //     } else if( i == 2 ) {
+    //         pthread_create(&tid[i], NULL, vs, x);   // Creates thread to check if 3x3 has digits 1 - 9 and if there are any duplicate numbers
+    //     }
+    // }
+
+//     for (int i = 0; i < numThreads; i++) {
+//        pthread_join(tid[i], NULL);
+//     //    printf("Thread %10x joined\n", tid[i]);
+//        fflush(stdout);
+//    }
+
+    printf("All Three Threads have exited using join(), exiting program....\n");
     fflush(stdout);
-    exit(EXIT_SUCCESS);
+    // exit(EXIT_SUCCESS);
 
-    return validateRows(x) + validateCols(x) + validateSubGrids(x); // if all true = valid 9x9, else = not valid 9x9
+     return validateRows(x) + validateCols(x) + validateSubGrids(x); // if all true = valid 9x9, else = not valid 9x9
     // return validateSubGrids(x);
 }
