@@ -12,7 +12,10 @@ void readSudoku(int x[][9], FILE *in);
 void printSudoku(int x[][9]);
 int validateRows(int x[9][9]);
 int validateCols(int x[9][9]);
-int validateSubGrids(int x[9][9]); // Broken: Need to fix subgrid locator
+int validateSubGrids(int x[9][9]);
+void *vr(int x[9][9]);
+void *vc(int x[9][9]);
+void *vs(int x[9][9]);
 bool validSudokuGrid(int x[][9]);
 
 /* These are the only two global variables allowed in your program */
@@ -78,13 +81,12 @@ int main(int argc, char *argv[])
     // validateCols(sudoku_grid);
     if (validSudokuGrid(sudoku_grid))
     {
-        printf("Valid Grid! \n");
+        printf("The input is a valid Sudoku. \n");
     }
     else
     {
-        printf("Not Valid Grid! \n");
+        printf("The input is not a valid Sudoku. \n");
     }
-    validateSubGrids(sudoku_grid);
 
     return 0;
 }
@@ -150,34 +152,75 @@ void printSudoku(int x[][9])
 // Used to validate rows per 3x3 grid
 int validateRows(int x[9][9])
 {
-
-    // Traversing Rows
-    for (int i = 0; i < 9; i++)
+    for (int i = 0; i < 9; i += 3)
     {
-
-        // Storing a zero at the last index of the array
-        // Used for validation later on
-        int rowValidate[9] = {0};
-
-        // Traversing Columns
-        for (int j = 0; j < 9; j++)
+        for (int j = 0; j < 9; j += 3)
         {
+            int subgridValidate[9] = {0};
 
-            // Holds current integer value wherever our array is at
-            int currVal = x[i][j];
-
-            // Checking to see if our index is used or not
-            // Hence, using the compliment to check for dupes
-            // Example, currVal = x[0][1] ; row zero column 1
-            // currVal evaluates to 7
-            if (rowValidate[currVal - 1] == 0)
+            for (int k = i; k < i + 3; k++)
             {
-                rowValidate[currVal - 1] = 1;
-            }
-            else
-            { // Checks if dupllicate or out of bounds
-                printf("Row: %d does not have the required values\n", i + 1);
-                return 0;
+                for (int m = j; m < j + 3; m++)
+                {
+                    int currVal = x[k][m];
+                    if (subgridValidate[currVal - 1] == 0)
+                    {
+                        subgridValidate[currVal - 1] = 1;
+                    }
+                    // else
+                    // {
+                    //     // printf("row: %d, col: %d", k+1, m+1);
+                    //     // printf("Row: %d does not have required values \n", k + 1);
+                    //     // printf("Column: %d does not have required values \n", m + 1);
+                    //     return 0;
+                    // }
+                    else if((subgridValidate[currVal - 1] == 1) && (k >= 0 && k <=2)) {    // checks for dupes, segfaults if num > 9
+                        if( m >= 0 && m <= 2 ){
+                            printf("Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", k + 1);
+                            return 0;
+                        }
+                        else if ( m >= 3 && m <= 5 ){
+                            printf("Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", k + 1);
+                            return 0;
+                        }
+                        else if ( m >= 6 && m <= 8 ){
+                            printf("Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", k + 1);
+                            return 0;
+                        }
+                    }
+                    else if((subgridValidate[currVal - 1] == 1) && (k >= 3 && k <=5) ) {    // checks for dupes, segfaults if num > 9
+                        if( m >= 0 && m <= 2 ){
+                            printf("Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", k + 1);
+                            return 0;
+                        }
+                        else if( m >= 3 && m <= 5 ){
+                            printf("Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", k + 1);
+                            return 0;
+                        }
+                        else if( m >= 6 && m <= 8 ){
+                            printf("Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", k + 1);
+                            return 0;
+                        }
+                    }
+                    else if((subgridValidate[currVal - 1] == 1) && (k >= 6 && k <=8)) {    // checks for dupes, segfaults if num > 9
+                        if( m >= 0 && m <= 2 ){
+                            printf("Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", k + 1);
+                            return 0;
+                        }
+                        else if( m >= 3 && m <= 5 ){
+                            printf("Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", k + 1);
+                            return 0;
+                        }
+                        else if( m >= 6 && m <= 8 ){
+                            printf("Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", k + 1);
+                            return 0;
+                        }
+                    }
+                    else //all subgrid have correct values.
+                    {
+                        return 1; // true
+                    }
+                }
             }
         }
     }
@@ -211,32 +254,73 @@ int validateRows(int x[9][9])
 // Function to check 3x3 Sub-Grids
 int validateCols(int x[9][9])
 {
-    // Traversing Rows
     for (int i = 0; i < 9; i += 3)
     {
-        // Trvaversing Columns
         for (int j = 0; j < 9; j += 3)
         {
-
-            // Init array to check if value already exists
             int subgridValidate[9] = {0};
 
-            // Limiting to check only 3x3 subgrids instead of whole 9x9
             for (int k = i; k < i + 3; k++)
             {
-                // Limiting to check only 3x3 subgrids instead of whole 9x9
                 for (int m = j; m < j + 3; m++)
                 {
-                    int currVal = x[k][m]; // Store whatever value you are on into currVal
-
-                    // If the index does not hold that value set to 1
+                    int currVal = x[k][m];
                     if (subgridValidate[currVal - 1] == 0)
                     {
                         subgridValidate[currVal - 1] = 1;
                     }
-                    else
-                    { // If index is already taken then there is a duplicate
-                        printf("Column: %d does not have required values \n", m + 1);
+                    // else
+                    // {
+                    //     // printf("row: %d, col: %d", k+1, m+1);
+                    //     // printf("Row: %d does not have required values \n", k + 1);
+                    //     // printf("Column: %d does not have required values \n", m + 1);
+                    //     return 0;
+                    // }
+                    else if((subgridValidate[currVal - 1] == 1) && (k >= 0 && k <=2)) {    // checks for dupes, segfaults if num > 9
+                        if( m >= 0 && m <= 2 ){
+                            printf("Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", m + 1);
+                            return 0;
+                        }
+                        else if ( m >= 3 && m <= 5 ){
+                            printf("Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", m + 1);
+                            return 0;
+                        }
+                        else if ( m >= 6 && m <= 8 ){
+                            printf("Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", m + 1);
+                            return 0;
+                        }
+                    }
+                    else if((subgridValidate[currVal - 1] == 1) && (k >= 3 && k <=5) ) {    // checks for dupes, segfaults if num > 9
+                        if( m >= 0 && m <= 2 ){
+                            printf("Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", m + 1);
+                            return 0;
+                        }
+                        else if( m >= 3 && m <= 5 ){
+                            printf("Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", m + 1);
+                            return 0;
+                        }
+                        else if( m >= 6 && m <= 8 ){
+                            printf("Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", m + 1);
+                            return 0;
+                        }
+                    }
+                    else if((subgridValidate[currVal - 1] == 1) && (k >= 6 && k <=8)) {    // checks for dupes, segfaults if num > 9
+                        if( m >= 0 && m <= 2 ){
+                            printf("Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", m + 1);
+                            return 0;
+                        }
+                        else if( m >= 3 && m <= 5 ){
+                            printf("Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", m + 1);
+                            return 0;
+                        }
+                        else if( m >= 6 && m <= 8 ){
+                            printf("Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", m + 1);
+                            return 0;
+                        }
+                    }
+                    else //all subgrid have correct values.
+                    {
+                        return 1; // true
                     }
                 }
             }
@@ -262,99 +346,101 @@ int validateSubGrids(int x[9][9])
                     {
                         subgridValidate[currVal - 1] = 1;
                     }
-                    else
-                    {
-                        printf("row: %d, col: %d", k, m);
-                    }
-                    // else if((subgridValidate[currVal - 1] == 1) && (k >= 0 && k <=2)) {    // checks for dupes, segfaults if num > 9
-                    //     if( m >= 0 && m <= 2 ){
-                    //         printf("The top left subgrid does not have the required values\n");
-                    //         return 0;
-                    //     }
-                    //     else if ( m >= 3 && m <= 5 ){
-                    //         printf("The top mid subgrid does not have the required values\n");
-                    //                                     printf("%d %d", i,j);
-
-                    //         return 0;
-                    //     }
-                    //     else if ( m >= 6 && m <= 8 ){
-                    //         printf("The top right subgrid does not have the required values\n");
-                    //                                                                 printf("%d %d", i,j);
-
-                    //         return 0;
-                    //     }
-                    // }
-                    // else if((subgridValidate[currVal - 1] == 1) && (k >= 3 && k <=5) ) {    // checks for dupes, segfaults if num > 9
-                    //     if( m >= 0 && m <= 2 ){
-                    //         printf("The left subgrid does not have the required values\n");
-                    //         printf("%d %d", i,j);
-                    //         return 0;
-                    //     }
-                    //     else if( m >= 3 && m <= 5 ){
-                    //         printf("The left mid subgrid does not have the required values\n");
-                    //         printf("%d %d", i,j);
-                    //         return 0;
-                    //     }
-                    //     else if( m >= 6 && m <= 8 ){
-                    //         printf("The left right subgrid does not have the required values\n");
-                    //         return 0;
-                    //     }
-                    // }
-                    // else if((subgridValidate[currVal - 1] == 1) && (k >= 6 && k <=8)) {    // checks for dupes, segfaults if num > 9
-                    //     if( m >= 0 && m <= 2 ){
-                    //         printf("The bottom left subgrid does not have the required values\n");
-                    //         printf("%d %d", i,j);
-                    //         return 0;
-                    //     }
-                    //     else if( m >= 3 && m <= 5 ){
-                    //         printf("The bottom mid subgrid does not have the required values\n");
-                    //         return 0;
-                    //     }
-                    //     else if( m >= 6 && m <= 8 ){
-                    //         printf("The bottom right subgrid does not have the required values\n");
-                    //         return 0;
-                    //     }
-                    // }
-                    // else //all subgrid have correct values.
+                    // else
                     // {
-                    //     return 1; // true
-                    // }
-
-                    // else if((subgridValidate[currVal - 1] == 1) && (k >= 0 && k <=2) && (m >= 0 && m <= 2)) {    // checks for dupes, segfaults if num > 9
-                    //     printf("The top left subgrid does not have the required values\n");
+                    //     // printf("row: %d, col: %d", k+1, m+1);
+                    //     // printf("Row: %d does not have required values \n", k + 1);
+                    //     // printf("Column: %d does not have required values \n", m + 1);
                     //     return 0;
                     // }
-                    // else if((subgridValidate[currVal - 1] == 1) && (k >= 0 && k <=2) && (m >= 3 && m <= 5)) {    // checks for dupes, segfaults if num > 9
-                    //     printf("The top mid subgrid does not have the required values\n");
-                    //     return 0;
-                    // }
-                    // else if((subgridValidate[currVal - 1] == 1) && (k >= 0 && k <=2) && (m >= 6 && m <= 8)) {    // checks for dupes, segfaults if num > 9
-                    //     printf("The top right subgrid does not have the required values\n");
-                    //     return 0;
-                    // }
-                    // if((subgridValidate[currVal - 1] == 1) && (k >= 3 && k <=5) && (m >= 0 && m <= 2)) {    // checks for dupes, segfaults if num > 9
-                    //     printf("The left subgrid does not have the required values\n");
-                    //     printf("%d %d", i,j);
-                    //     return 0;
-                    // }
-                    // else if((subgridValidate[currVal - 1] == 1) && (k >= 3 && k <=5) && (m >= 3 && m <= 5)) {    // checks for dupes, segfaults if num > 9
-                    //     printf("The left mid subgrid does not have the required values\n");
-                    //     return 0;
-                    // }
-                    // else if((subgridValidate[currVal - 1] == 1) && (k >= 3 && k <=5) && (m >= 6 && m <= 8)) {    // checks for dupes, segfaults if num > 9
-                    //     printf("The left right subgrid does not have the required values\n");
-                    //     return 0;
-                    // }
-                    // else if((subgridValidate[currVal - 1] == 1) && (k >= 6 && k <=8) && (m >= 6 && m <= 8)) {    // checks for dupes, segfaults if num > 9
-                    //     printf("The bottom left subgrid does not have the required values\n");
-                    // }
+                    else if((subgridValidate[currVal - 1] == 1) && (k >= 0 && k <=2)) {    // checks for dupes, segfaults if num > 9
+                        if( m >= 0 && m <= 2 ){
+                            printf("The top left subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                            return 0;
+                        }
+                        else if ( m >= 3 && m <= 5 ){
+                            printf("The top mid subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                            return 0;
+                        }
+                        else if ( m >= 6 && m <= 8 ){
+                            printf("The top right subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                            return 0;
+                        }
+                    }
+                    else if((subgridValidate[currVal - 1] == 1) && (k >= 3 && k <=5) ) {    // checks for dupes, segfaults if num > 9
+                        if( m >= 0 && m <= 2 ){
+                            printf("The left subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                            return 0;
+                        }
+                        else if( m >= 3 && m <= 5 ){
+                            printf("The left mid subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                            return 0;
+                        }
+                        else if( m >= 6 && m <= 8 ){
+                            printf("The left right subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                            return 0;
+                        }
+                    }
+                    else if((subgridValidate[currVal - 1] == 1) && (k >= 6 && k <=8)) {    // checks for dupes, segfaults if num > 9
+                        if( m >= 0 && m <= 2 ){
+                            printf("The bottom left subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                            return 0;
+                        }
+                        else if( m >= 3 && m <= 5 ){
+                            printf("The bottom mid subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                            return 0;
+                        }
+                        else if( m >= 6 && m <= 8 ){
+                            printf("The bottom right subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                            return 0;
+                        }
+                    }
+                    else //all subgrid have correct values.
+                    {
+                        return 1; // true
+                    }
                 }
             }
         }
     }
 }
 
+void *vr(int x[9][9]) {
+    validateRows(x);
+}
+void *vc(int x[9][9]) {
+    validateCols(x);
+}
+void *vs(int x[9][9]) {
+    validateSubGrids(x);
+}
+
 bool validSudokuGrid(int x[][9])
 {
-    return validateCols(x) && validateRows(x) && validateSubGrids(x); // if all true = valid 9x9, else = not valid 9x9
+    int numThreads = 2;
+    pthread_t tid [2];
+
+    for(int i = 0; i < 1; i++) {
+        if(i == 0) {
+            pthread_create(&tid[i], NULL, vr(x), NULL);
+        } else if(i == 1) {
+            pthread_create(&tid[i], NULL, vc(x), NULL);
+        } else {
+            pthread_create(&tid[i], NULL, vc(x), NULL);
+        }
+        printf("OOOGA BOOGA");
+    }
+    printf("OOOGA BOOGA");
+    for (int i = 0; i < numThreads; i++) {
+       pthread_join(tid[i], NULL);
+       printf("Thread %10x joined\n", tid[i]);
+       fflush(stdout);
+   }
+
+    printf("All Four Threads have exited using join(), exiting program....\n");
+    fflush(stdout);
+    exit(EXIT_SUCCESS);
+
+    return validateRows(x) + validateCols(x) + validateSubGrids(x); // if all true = valid 9x9, else = not valid 9x9
+    // return validateSubGrids(x);
 }
