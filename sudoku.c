@@ -69,6 +69,8 @@ int main(int argc, char *argv[])
 
     // Initializing sudoku grid to parse file grid
     int sudoku_grid[9][9];
+    int numThreads = 3;
+    pthread_t tid[3];
 
     if (argc == 1)
     {
@@ -79,6 +81,17 @@ int main(int argc, char *argv[])
     printSudoku(sudoku_grid);
     // validateRows(sudoku_grid);
     // validateCols(sudoku_grid);
+
+    pthread_create(&tid[0], NULL, vr, sudoku_grid);   // Creates thread to check if rows have digits 1 - 9 and if there are any duplicate numbers
+    pthread_create(&tid[1], NULL, vc, sudoku_grid);   // Creates thread to check if rowcolss have digits 1 - 9 and if there are any duplicate numbers
+    pthread_create(&tid[2], NULL, vs, sudoku_grid);   // Creates thread to check if 3x3 subgrids have digits 1 - 9 and if there are any duplicate numbers
+
+    for (int i = 0; i < numThreads; i++) {
+       pthread_join(tid[i], NULL);
+    //    printf("Thread %10x joined\n", tid[i]);
+       fflush(stdout);
+   }
+
     if (validSudokuGrid(sudoku_grid))
     {
         printf("The input is a valid Sudoku. \n");
@@ -88,7 +101,11 @@ int main(int argc, char *argv[])
         printf("The input is not a valid Sudoku. \n");
     }
 
-    return 0;
+    printf("All Threads have exited using join(), exiting program....\n");
+    fflush(stdout);
+    exit(EXIT_SUCCESS);
+
+    // return 0;
 }
 
 void readSudoku(int x[][9], FILE *in)
@@ -423,9 +440,9 @@ bool validSudokuGrid(int x[][9])
     int numThreads = 3;
     pthread_t tid[3];
 
-    pthread_create(&tid[0], NULL, vr, x);   // Creates thread to check if rows have digits 1 - 9 and if there are any duplicate numbers
-    pthread_create(&tid[1], NULL, vc, x);   // Creates thread to check if rows have digits 1 - 9 and if there are any duplicate numbers
-    pthread_create(&tid[2], NULL, vs, x);   // Creates thread to check if rows have digits 1 - 9 and if there are any duplicate numbers
+    // pthread_create(&tid[0], NULL, vr, x);   // Creates thread to check if rows have digits 1 - 9 and if there are any duplicate numbers
+    // pthread_create(&tid[1], NULL, vc, x);   // Creates thread to check if rows have digits 1 - 9 and if there are any duplicate numbers
+    // pthread_create(&tid[2], NULL, vs, x);   // Creates thread to check if rows have digits 1 - 9 and if there are any duplicate numbers
 
     // for(int i = 0; i < numThreads; i++) {
     //     if(i == 0) {
@@ -443,10 +460,10 @@ bool validSudokuGrid(int x[][9])
 //        fflush(stdout);
 //    }
 
-    printf("All Threads have exited using join(), exiting program....\n");
-    fflush(stdout);
+    // printf("All Threads have exited using join(), exiting program....\n");
+    // fflush(stdout);
     // exit(EXIT_SUCCESS);
 
-     return validateRows(x) + validateCols(x) + validateSubGrids(x); // if all true = valid 9x9, else = not valid 9x9
+    return validateRows(x) + validateCols(x) + validateSubGrids(x); // if all true = valid 9x9, else = not valid 9x9
     // return validateSubGrids(x);
 }
