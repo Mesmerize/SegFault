@@ -1,10 +1,11 @@
 --------------------------------------------------------------------------
-Last Updated: 3/3/2022
+Last Updated: 3/5/2022
             +-------------------------+
             | CS 450                  |
             | PROJECT: SUDOKU CHECKER |
             | DESIGN DOCUMENT         |
             +-------------------------+
+
 
 ---- GROUP ----
 
@@ -12,7 +13,7 @@ Last Updated: 3/3/2022
 
 Phi Do <dop@sonoma.edu>
 Brandon Luna Rodriguez <lunarodr@sonoma.edu>
-Erika Mendoza < mendoeri@sonoma.edu>
+Erika Mendoza <mendoeri@sonoma.edu>
 
 ---- PRELIMINARIES ----
 
@@ -23,8 +24,6 @@ Erika Mendoza < mendoeri@sonoma.edu>
 >> preparing your submission, other than man pages, course
 >> text, lecture notes, and course staff.
 
-*BRANDON EDIT HERE*
-
 
                THREADED SUDOKU CHECKER
                =======================
@@ -34,48 +33,130 @@ Erika Mendoza < mendoeri@sonoma.edu>
 >> A1: Given the problem decomposition described in the requirements
 >> for Part A, to achieve the maximum parallelism how many
 >> threads would need to be running concurrently?
+********
+Answer: To achieve the maximum parallelism, there needs to be 27 threads split between 
+the rows(9 threads), columns(9 threads) and the subgrids(9 threads). 
+********
 
 ---- DATA STRUCTURES ----
 
 >> A2: Copy here the declaration of each new or changed `struct', 
 >> `struct' member, global or static variable, `typedef', or enumeration.
 >> Identify the purpose of each in 2--25 words.
-Answer: NA
+********
+Answer: 
+typedef struct {
+   int rows;
+   int cols;
+   int res;
+   int (*sudokuGrid)[9];
+} Sudoku;
+
+int rows is to represent the rows of the sudoku grid
+int cols is to represent the columns of the sudoku grid
+Int res stores a dynamic array of 1’s or 0’s, 1 represents true and 0 represents false. 
+This array determines if there is a valid row or column in the grid, which ultimately determines 
+if there is a valid or invalid sudoku. int sudokuGrid is a pointer to a grid, this is essentially 
+the grid that is parsed and we use this as the sudoku we are determining is invalid or valid.
+********
 
 ---- FUNCTIONS ----
 
 >> A3: Provide a prototype and documentation for each function
 >> you have introduced to support this portion of the project.
 >> Use the Google Style Guide for function documentation.
-Answer: TBA
-     
-     *Add more for threads*
+Answer: 
+********
+void readSudoku(int (*sudokuGrid)[9], FILE *in); 
+void printSudoku(int x[][9]);
+int columnValidation(Sudoku* sudoku);
+void *columnValidationRoutine(void *sudoku);
+int rowValidation(Sudoku* sudoku);
+void *rowValidationRoutine(void *sudoku);
+int subgrid3x3Validation(Sudoku* sudoku);
+void  *subgrid3x3ValidationRoutine(void* sudoku);
+
+void readSudoku(int (*sudokuGrid)[9], FILE *in);
+This function reads in stdin values from the .txt files.
+
+void printSudoku(int x[][9]);
+This function prints the stdin values from the .txt files as a grid.
+
+Int columnValidation(Sudoku* sudoku);
+This function checks each grid column for duplicate values (indexes 1 - 9).
+
+void *columnValidationRoutine(void *sudoku);
+This function is used along with the columnValidation() function to verify if each 
+column is valid. If columnValidation() has not found duplicate values in any column, 
+it would return valid for all columns. If columnValidation() has found duplicate values 
+in any column, it would return invalid for the column(s) containing duplicates.
+
+int rowValidation(Sudoku* sudoku);
+This function checks each grid row for duplicate values (index 1 - 9).
+
+void *rowValidationRoutine(void *sudoku);
+This function is used along with the rowValidation() function to verify if each row 
+is valid. If rowValidation() has not found duplicate values in any row, it would 
+return valid for all rows. If rowValidation() has found duplicate values in any row, 
+it would return invalid for the row(s) containing duplicates.
+
+int subgrid3x3Validation(Sudoku* sudoku);
+This function checks each subgrid(the nine 3x3 sections) for duplicate values.
+
+void  *subgrid3x3ValidationRoutine(void* sudoku);
+This function is used along with the subgrid3x3Validation() function to verify if 
+each subgrid is valid. If subgrid3x3Validation() has not found duplicate values in 
+any subgrid, it would return valid for all subgrids. If subgrid3x3Validation() has 
+found duplicate values in any subgrid, it would return invalid for the subgrid(s) 
+containing duplicates.
+********
 
 ---- ALGORITHMS ----
 
 >> A4: Briefly describe how you communicated to each worker thread
 >> the work it should perform, as a void *
-Answer: TBA
+********
+Answer: Each worker thread does not exactly communicate with each other. Each 
+thread is created and runs its task in parallel to one another.
+********
 
 >> A5: Briefly describe the function(s) run by each worker. Explain
->> if any memory memory is shared among threads.
-Answer: TBA
+>> if any memory is shared among threads.
+********
+Answer: Due to the fact that the threads run in parallel and do not connect, 
+no memory is shared among the threads. Each thread is assigned a pointer to each 
+row, column, or subGrid. These threads check the validation of either a row, 
+column, or subGrid. In addition, the threads run in parallel and return a boolean 
+value (1 or 0). These bool values are stored in an array, which is used to determine 
+the validity of the sudoku grid.
+********
 
 >> A6: Explain how the main thread knows when all the worker
 >> threads have completed their work.
-Answer: TBA
-
+********
+Answer: The main thread knows when all the worker threads have completed their 
+work with pthread_join() because this is used as a wait while each thread is completed.
+********
 >> A7: Explain how the main thread knows when a particular worker
->> thread has reported a property is missing.
-Answer: TBA
+>> thread has reported a property as missing.
+********
+Answer: The main thread knows when a particular thread has reported a property as 
+missing because each thread created is responsible for each row, column, and 
+subgrid in having the correct values with no conflicts before exiting with 
+pthread_exit(NULL). 
+********
 
 ---- RATIONALE ----
 
 >> A8: Explain how you ensured that your program has no resource leaks.
 >> List all the free-able resources and, for each, explain how you
 >> free them at the earliest possible time.
-Answer: TBA
-
+********
+Answer: Threads are a free-able resource. We prevent threads from creating resource 
+leaks by reaping the threads with pthread_join() after the threads have completed 
+their task on their assigned row, column, or subgrid. When we fork a child process, 
+it is reaped as soon as it has completed its task. This will prevent any resource leaks.
+********
 
                FORKING SUDOKU CHECKER
                =======================
@@ -94,7 +175,7 @@ Answer: TBA
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 2--25 words.
 >> Do not repeat anything already described in A2.
-Answer: NA?
+Answer: NA, we only used a single struct, and it is used for the threading partition of this project.
 
 ---- FUNCTIONS ----
 
@@ -103,14 +184,8 @@ Answer: NA?
 >> Use the Google Style Guide for function documentation.
 >> Do not repeat anything already described in A3.
 Answer:
-     void readSudoku(int x[][9], FILE *in); //reads in stdin values from the .txt files
-     void printSudoku(int x[][9]); //prints the stdin values from the .txt files in a grid
-     int validateRows(int x[9][9]); // checks each grid row for duplicate values (index 1 - 9)
-     int validateCols(int x[9][9]); // checks each grid column for duplicate values (indexes 1 - 9)
-     int validateSubGrids(int x[9][9]); //checks each sub grid (the 9 3x3 sections) for duplicate values
-     bool validSudokuGrid(int x[][9]); //calls the validateRows(), validateCols(), and validateSubGrids() functions and returns true -> indicating we have a valid sudoku
      
-     *need to add more for the forking portion*
+     *need to add more after the forking functions
 
 ---- ALGORITHMS ----
 
@@ -149,10 +224,12 @@ Answer: TBA
 >> in it, too easy or too hard?  Did it take too long or too little time?
 
 >> Did you find that working on a particular part of the assignment gave
->> you greater insight into some aspect of OS design?
+>> you a greater insight into some aspect of OS design?
 
 >> Is there some particular fact or hint we should give students in
 >> future quarters to help them solve the problems?  Conversely, did you
 >> find any of our guidance to be misleading?
 
 >> Any other comments?
+
+
