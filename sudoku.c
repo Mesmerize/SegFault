@@ -8,15 +8,21 @@
 #include <getopt.h>
 #include <stdbool.h>
 
-void readSudoku(int x[][9], FILE *in);
+typedef struct {
+    int rows;
+    int cols;
+    int res;
+    int (*sudokuGrid)[9];
+} Sudoku;
+
+void readSudoku(int (*sudokuGrid)[9], FILE *in);
 void printSudoku(int x[][9]);
-int validateRows(int x[9][9]);
-int validateCols(int x[9][9]);
-int validateSubGrids(int x[9][9]);
-void *vr(void *x);
-void *vc(void *);
-void *vs(void *);
-bool validSudokuGrid(int x[][9]);
+int columnValidation(Sudoku* sudoku);
+void *columnValidationRoutine(void *sudoku);
+int rowValidation(Sudoku* sudoku);
+void *rowValidationRoutine(void *sudoku);
+int subgrid3x3Validation(Sudoku* sudoku);
+void  *subgrid3x3ValidationRoutine(void* sudoku);
 
 /* These are the only two global variables allowed in your program */
 static int verbose = 0;
@@ -67,48 +73,101 @@ int main(int argc, char *argv[])
 
     // printf("Test");
 
+    // parameters *para = (parameters *) malloc(sizeof(parameters));
+
     // Initializing sudoku grid to parse file grid
+    Sudoku sudoku;
     int sudoku_grid[9][9];
-    int numThreads = 3;
-    pthread_t tid[3];
+    sudoku.sudokuGrid = sudoku_grid;
+
+    // Initializing 27 Threads
+    int numThreads = 27;
+    pthread_t tid[numThreads];
+    int results[numThreads];
+    int thread_count = 0;
+    bool validSudokuGrid = true;
+
+    Sudoku** thread_boxes = malloc(numThreads * sizeof(Sudoku*));
 
     if (argc == 1)
     {
         printf("File successfully opened!\n");
     }
 
-    readSudoku(sudoku_grid, stdin);
+    readSudoku(sudoku.sudokuGrid, stdin);
     printSudoku(sudoku_grid);
-    // validateRows(sudoku_grid);
-    // validateCols(sudoku_grid);
 
-    pthread_create(&tid[0], NULL, vr, sudoku_grid);   // Creates thread to check if rows have digits 1 - 9 and if there are any duplicate numbers
-    pthread_create(&tid[1], NULL, vc, sudoku_grid);   // Creates thread to check if rowcolss have digits 1 - 9 and if there are any duplicate numbers
-    pthread_create(&tid[2], NULL, vs, sudoku_grid);   // Creates thread to check if 3x3 subgrids have digits 1 - 9 and if there are any duplicate numbers
-
-    for (int i = 0; i < numThreads; i++) {
-       pthread_join(tid[i], NULL);
-    //    printf("Thread %10x joined\n", tid[i]);
-       fflush(stdout);
-   }
-
-    if (validSudokuGrid(sudoku_grid))
-    {
-        printf("The input is a valid Sudoku. \n");
+    for(int i = 0; i < 9; i++) {
+        for(int j = 0; j < 9; j++) {
+            if(i % 3 == 0 && j % 3 == 0) {
+                Sudoku* multThreads = (Sudoku*) malloc(sizeof(Sudoku));
+                multThreads->rows = i;
+                multThreads->cols = j;
+                multThreads->sudokuGrid = sudoku.sudokuGrid;
+                thread_boxes[thread_count] = multThreads;
+                pthread_create( &tid[thread_count], NULL, subgrid3x3ValidationRoutine, (void*) thread_boxes[thread_count]);
+                thread_count++;
+            }
+            if(i == 0) {
+                Sudoku* multThreads = (Sudoku*) malloc(sizeof(Sudoku));
+                multThreads->cols = j;
+                multThreads->sudokuGrid = sudoku.sudokuGrid;
+                thread_boxes[thread_count] = multThreads;
+                pthread_create( &tid[thread_count], NULL, columnValidationRoutine, (void*) thread_boxes[thread_count]);
+                thread_count++;
+            }
+            if(j == 0) {
+                Sudoku* multThreads = (Sudoku*) malloc(sizeof(Sudoku));
+                multThreads->rows = i;
+                multThreads->sudokuGrid = sudoku.sudokuGrid;
+                thread_boxes[thread_count] = multThreads;
+                pthread_create( &tid[thread_count], NULL, rowValidationRoutine, (void*) thread_boxes[thread_count]);
+                thread_count++;
+            }
+        }
     }
-    else
-    {
-        printf("The input is not a valid Sudoku. \n");
+
+    // for(int i = 0; i < 9; i++) {
+    //     for(int j = 0; j < 9; j++) {
+    //         if(i == 0) {
+    //             printf("%d", threadIndx);
+    //             parameters *colData = (parameters *) malloc(sizeof(parameters));
+    //             colData->rows = i;
+    //             colData->cols = j;
+    //             pthread_create(&tid[threadIndx++], NULL, columnValidation(colData, sudoku_grid, validateThreads), NULL);
+    //         }
+    //         // if(j == 0) {
+    //         //     parameters *rowData = (parameters *) malloc(sizeof(parameters));
+    //         //     rowData->rows = i;
+    //         //     rowData->cols = j;
+    //         //     pthread_create(&tid[threadIndx++], NULL, rowValidation(rowData, sudoku_grid, validateThreads), NULL);
+    //         // }
+    //     }
+    // }
+
+    for(int i = 0; i< 27; i++) {
+        pthread_join(tid[i], NULL);
+        // printf("Thread %10x joined\n", tid[i]);
+        fflush(stdout);
     }
 
-    printf("All Threads have exited using join(), exiting program....\n");
-    fflush(stdout);
-    exit(EXIT_SUCCESS);
+    for(int i = 0; i < numThreads; i++) {
+        // printf("%d \n", thread_boxes[i]->res);
+        if(thread_boxes[i]->res != 1) {
+            printf("The input is not a valid Sudoku. \n");
+            validSudokuGrid = false;
+            break;
+        } 
+    }
+    
+    if(validSudokuGrid) {
+         printf("The input is a valid Sudoku. \n");
+    }
 
-    // return 0;
+    return 0;
 }
 
-void readSudoku(int x[][9], FILE *in)
+void readSudoku(int (*sudokuGrid)[9], FILE *in)
 {
     fseek(in, -1, SEEK_CUR); // Seek to start off the current position of the file ptr
 
@@ -122,7 +181,7 @@ void readSudoku(int x[][9], FILE *in)
             if (isdigit(entry))
             {
                 ++totalVals;
-                x[i][j] = entry - '0'; // Store integer representation
+                sudokuGrid[i][j] = entry - '0'; // Store integer representation
                 ++j;
                 if (j == 9)
                 {
@@ -134,7 +193,7 @@ void readSudoku(int x[][9], FILE *in)
     }
 }
 
-void printSudoku(int x[][9])
+void printSudoku(int (*sudokuGrid)[9])
 {
     int i = 0, j = 0; // i = rows, j = cols
     for (i = 0; i < 9; i++)
@@ -145,17 +204,17 @@ void printSudoku(int x[][9])
             // we make a space between nums
             if (2 == j || 5 == j)
             {
-                printf("%d   ", x[i][j]);
+                printf("%d   ", sudokuGrid[i][j]);
             }
             // if we are on the last num of row we make a space
             else if (8 == j)
             {
-                printf("%d\n", x[i][j]);
+                printf("%d\n", sudokuGrid[i][j]);
             }
             // anything else we make a space
             else
             {
-                printf("%d ", x[i][j]);
+                printf("%d ", sudokuGrid[i][j]);
             }
         }
         // if we are on row 3 or row 5 we make a space
@@ -166,304 +225,188 @@ void printSudoku(int x[][9])
     }
 }
 
-// Used to validate rows per 3x3 grid
-int validateRows(int x[9][9])
-{
-    for (int i = 0; i < 9; i += 3)
-    {
-        for (int j = 0; j < 9; j += 3)
-        {
-            int subgridValidate[9] = {0};
+int columnValidation(Sudoku* sudoku) {
+    // Confirming that params indicate a valid divison of the grid
+    // parameters *params = (parameters*) param;  // params pointer to use member variables
 
-            for (int k = i; k < i + 3; k++)
-            {
-                for (int m = j; m < j + 3; m++)
-                {
-                    int currVal = x[k][m];
-                    if (subgridValidate[currVal - 1] == 0)
-                    {
-                        subgridValidate[currVal - 1] = 1;
-                    }
-                    // else
-                    // {
-                    //     // printf("row: %d, col: %d", k+1, m+1);
-                    //     // printf("Row: %d does not have required values \n", k + 1);
-                    //     // printf("Column: %d does not have required values \n", m + 1);
-                    //     return 0;
-                    // }
-                    else if((subgridValidate[currVal - 1] == 1) && (k >= 0 && k <=2)) {    // checks for dupes, segfaults if num > 9
-                        if( m >= 0 && m <= 2 ){
-                            printf("Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", k + 1);
-                            return 0;
-                        }
-                        else if ( m >= 3 && m <= 5 ){
-                            printf("Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", k + 1);
-                            return 0;
-                        }
-                        else if ( m >= 6 && m <= 8 ){
-                            printf("Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", k + 1);
-                            return 0;
-                        }
-                    }
-                    else if((subgridValidate[currVal - 1] == 1) && (k >= 3 && k <=5) ) {    // checks for dupes, segfaults if num > 9
-                        if( m >= 0 && m <= 2 ){
-                            printf("Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", k + 1);
-                            return 0;
-                        }
-                        else if( m >= 3 && m <= 5 ){
-                            printf("Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", k + 1);
-                            return 0;
-                        }
-                        else if( m >= 6 && m <= 8 ){
-                            printf("Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", k + 1);
-                            return 0;
-                        }
-                    }
-                    else if((subgridValidate[currVal - 1] == 1) && (k >= 6 && k <=8)) {    // checks for dupes, segfaults if num > 9
-                        if( m >= 0 && m <= 2 ){
-                            printf("Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", k + 1);
-                            return 0;
-                        }
-                        else if( m >= 3 && m <= 5 ){
-                            printf("Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", k + 1);
-                            return 0;
-                        }
-                        else if( m >= 6 && m <= 8 ){
-                            printf("Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", k + 1);
-                            return 0;
-                        }
-                    }
-                    else //all subgrid have correct values.
-                    {
-                        return 1; // true
-                    }
+    // Initializing rows and columns with our struct member variables
+    int rows = sudoku->rows;
+    int cols = sudoku->cols;
+
+    // Base Case: if row is not zero to start out or column is greater than zero in the beginning output error
+    if(rows != 0 || cols > 8) {
+        fprintf(stderr, "Invalid row or column for the column subdivision: happened at row: %d, col: %d\n", rows + 1,cols + 1);
+        pthread_exit(NULL);
+        return 0;
+    }
+
+    // Check to see if there are any duplicates in each column
+    int validationArr[9] = {0};
+
+    // Traversing rows and checking if 1 - 9 appears once or value greater 9 or less than 1
+    for(int i = 0; i < 9; i++) {
+        // Stores integer representation at curr col
+        int currVal = sudoku->sudokuGrid[i][cols];
+        // printf("col: %d\n", i);
+        // printf("currVal: %d\n", currVal);
+        // printf("%d\n", currVal);
+        // if the integer is less than zero or greater than or if the number has already appeared 
+        // the worker thread will exit (terminate)
+        if(currVal < 1 || currVal > 9 || validationArr[currVal - 1] == 1) {
+            // printf("entered here!\n");
+            fprintf(stderr, "Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", cols + 1);
+            pthread_exit(NULL);
+            return 0;
+        }
+        else {
+            // printf("entered here hehe!\n");
+            validationArr[currVal - 1] = 1;
+        }
+    }
+
+    // If broken out of for loop then the col subdivision is valid.
+    // validation[18 + cols] = 1;
+    return 1;
+    pthread_exit(NULL);
+}
+
+int rowValidation(Sudoku* sudoku) {
+    // Confirming that params indicate a valid divison of the grid
+    // parameters *params = (parameters*) param;  // params pointer to use member variables
+
+    // Initializing rows and columns with our struct member variables
+    int rows = sudoku->rows;
+    int cols = sudoku->cols;
+
+    // If column does not start at 1 we have an error of out of bounds or if row is greater than 9 
+    if(cols != 0 || rows > 8) {
+        fprintf(stderr, "Invalid row or column for the column subdivision: happened at row: %d, col: %d\n", rows + 1,cols + 1);
+        pthread_exit(NULL);
+        return 0;
+    }
+
+    // Check to see if there are any duplicates in each column
+    int validationArr[9] = {0};
+
+    // Traversing cols and checking if 1 - 9 appears once or value greater 9 or less than 1
+    for(int i = 0; i < 9; i++) {
+        // Stores integer representation at curr row
+        int currVal = sudoku->sudokuGrid[rows][i];
+        // printf("row %d\n", currVal);
+        // if the integer is less than zero or greater than or if the number has already appeared 
+        // the worker thread will exit (terminate)
+        if(currVal < 1 || currVal > 9 || validationArr[currVal - 1] == 1) {
+            fprintf(stderr, "Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", rows + 1);
+            pthread_exit(NULL);
+            return 0;
+        }
+        else {
+            // printf("entered here hehe!\n");
+            validationArr[currVal - 1] = 1;
+        }
+    }
+
+    // If broken out of for loop then the col subdivision is valid.
+    return 1;
+    pthread_exit(NULL);
+}
+
+int subgrid3x3Validation(Sudoku* sudoku) {
+    // Initializing rows and columns with our struct member variables
+    int rows = sudoku->rows;
+    int cols = sudoku->cols;
+
+    if(rows > 6 || rows % 3 != 0 || cols > 6 || cols % 3 != 0) {
+        fprintf(stderr, "Invalid row or column for subdivision: happened at row: %d, col: %d\n", rows + 1,cols + 1);
+        pthread_exit(NULL);
+        return 0;
+    }
+    // Check to see if there are any duplicates in each column
+    int validationArr[9] = {0};
+
+    for(int i = rows; i < rows + 3; i++) {
+        for(int j = cols; j < cols + 3; j++) {
+            // Stores integer representation at curr row
+            int currVal = sudoku->sudokuGrid[i][j];
+            // if the integer is less than zero or greater than or if the number has already appeared 
+            // the worker thread will exit (terminate)
+            if(validationArr[currVal - 1] == 0) {
+                validationArr[currVal - 1] = 1;
+            }
+            else if((validationArr[currVal - 1] == 1) && (i >= 0 && i <=2)) {    // checks for dupes, segfaults if num > 9
+                if( j >= 0 && j <= 2 ){
+                    printf("The top left subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                    pthread_exit(NULL);
+                    return 0;
+                }
+                else if ( j >= 3 && j <= 5 ){
+                    printf("The top mid subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                    pthread_exit(NULL);
+                    return 0;
+                }
+                else if ( j >= 6 && j <= 8 ){
+                    printf("%d %d",i,j);
+                    printf("The top right subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                    pthread_exit(NULL);
+                    return 0;
+                }
+            }
+            else if((validationArr[currVal - 1] == 1) && (i >= 3 && i <=5) ) {    // checks for dupes, segfaults if num > 9
+                if( j >= 0 && j <= 2 ){
+                    printf("The left subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                    pthread_exit(NULL);
+                    return 0;
+                }
+                else if ( j >= 3 && j <= 5 ){
+                    printf("The left mid subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                    pthread_exit(NULL);
+                    return 0;
+                }
+                else if ( j >= 6 && j <= 8 ){
+                    printf("The left right subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                    pthread_exit(NULL);
+                    return 0;
+                }
+            }
+            else if((validationArr[currVal - 1] == 1) && (i >= 6 && i <=8)) {    // checks for dupes, segfaults if num > 9
+                if( j >= 0 && j <= 2 ){
+                    printf("The bottom left subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                    pthread_exit(NULL);
+                    return 0;
+                }
+                else if ( j >= 3 && j <= 5 ){
+                    printf("The bottom mid subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                    pthread_exit(NULL);
+                    return 0;
+                }
+                else if ( j >= 6 && j <= 8 ){
+                    printf("The bottom right subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                    pthread_exit(NULL);
+                    return 0;
                 }
             }
         }
     }
+
+    // If broken out of for loop then the subdivision is valid.
+    return 1;
+    pthread_exit(NULL);
 }
 
-// Validating columns in the 3x3 grid *BACK UP*
-// Fixing column tracking
-// int validateCols(int x[9][9]) {
-//     int col = 0;
-//     // Traversing Rows
-//     for(int i = 0; i < 9; i++) {
-//         // Initialzing array to detect for duplicate values
-//         int colValidate[9] = {0};
-//         // Traversing columns
-//         for(int j = 0; j < 9; j++) {
-//             // Holds current value depending on row / col
-//             int currVal = x[i][j];
-
-//             // If the index is filled with a zero
-//             // that means the index is not taken
-//             if(colValidate[currVal - 1] == 0) {
-//                 colValidate[currVal - 1] = 1;   // fill index with 1 (true)
-//             } else {    // Checks if dupllicate or out of bounds
-//                 printf("Column: %d does not have the required values\n", j + 1);
-//                 return 0;
-//             }
-//         }   col ++;
-//     }
-// }
-
-// Function to check 3x3 Sub-Grids
-int validateCols(int x[9][9])
-{
-    for (int i = 0; i < 9; i += 3)
-    {
-        for (int j = 0; j < 9; j += 3)
-        {
-            int subgridValidate[9] = {0};
-
-            for (int k = i; k < i + 3; k++)
-            {
-                for (int m = j; m < j + 3; m++)
-                {
-                    int currVal = x[k][m];
-                    if (subgridValidate[currVal - 1] == 0)
-                    {
-                        subgridValidate[currVal - 1] = 1;
-                    }
-                    // else
-                    // {
-                    //     // printf("row: %d, col: %d", k+1, m+1);
-                    //     // printf("Row: %d does not have required values \n", k + 1);
-                    //     // printf("Column: %d does not have required values \n", m + 1);
-                    //     return 0;
-                    // }
-                    else if((subgridValidate[currVal - 1] == 1) && (k >= 0 && k <=2)) {    // checks for dupes, segfaults if num > 9
-                        if( m >= 0 && m <= 2 ){
-                            printf("Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", m + 1);
-                            return 0;
-                        }
-                        else if ( m >= 3 && m <= 5 ){
-                            printf("Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", m + 1);
-                            return 0;
-                        }
-                        else if ( m >= 6 && m <= 8 ){
-                            printf("Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", m + 1);
-                            return 0;
-                        }
-                    }
-                    else if((subgridValidate[currVal - 1] == 1) && (k >= 3 && k <=5) ) {    // checks for dupes, segfaults if num > 9
-                        if( m >= 0 && m <= 2 ){
-                            printf("Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", m + 1);
-                            return 0;
-                        }
-                        else if( m >= 3 && m <= 5 ){
-                            printf("Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", m + 1);
-                            return 0;
-                        }
-                        else if( m >= 6 && m <= 8 ){
-                            printf("Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", m + 1);
-                            return 0;
-                        }
-                    }
-                    else if((subgridValidate[currVal - 1] == 1) && (k >= 6 && k <=8)) {    // checks for dupes, segfaults if num > 9
-                        if( m >= 0 && m <= 2 ){
-                            printf("Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", m + 1);
-                            return 0;
-                        }
-                        else if( m >= 3 && m <= 5 ){
-                            printf("Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", m + 1);
-                            return 0;
-                        }
-                        else if( m >= 6 && m <= 8 ){
-                            printf("Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", m + 1);
-                            return 0;
-                        }
-                    }
-                    else //all subgrid have correct values.
-                    {
-                        return 1; // true
-                    }
-                }
-            }
-        }
-    }
+void *columnValidationRoutine(void *param) {
+    Sudoku* sudoku = (Sudoku*) param;
+    sudoku->res = columnValidation(sudoku);
+    return NULL;
 }
 
-// Needs intense fixing
-int validateSubGrids(int x[9][9])
-{
-    for (int i = 0; i < 9; i += 3)
-    {
-        for (int j = 0; j < 9; j += 3)
-        {
-            int subgridValidate[9] = {0};
-
-            for (int k = i; k < i + 3; k++)
-            {
-                for (int m = j; m < j + 3; m++)
-                {
-                    int currVal = x[k][m];
-                    if (subgridValidate[currVal - 1] == 0)
-                    {
-                        subgridValidate[currVal - 1] = 1;
-                    }
-                    // else
-                    // {
-                    //     // printf("row: %d, col: %d", k+1, m+1);
-                    //     // printf("Row: %d does not have required values \n", k + 1);
-                    //     // printf("Column: %d does not have required values \n", m + 1);
-                    //     return 0;
-                    // }
-                    else if((subgridValidate[currVal - 1] == 1) && (k >= 0 && k <=2)) {    // checks for dupes, segfaults if num > 9
-                        if( m >= 0 && m <= 2 ){
-                            printf("The top left subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
-                            return 0;
-                        }
-                        else if ( m >= 3 && m <= 5 ){
-                            printf("The top mid subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
-                            return 0;
-                        }
-                        else if ( m >= 6 && m <= 8 ){
-                            printf("The top right subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
-                            return 0;
-                        }
-                    }
-                    else if((subgridValidate[currVal - 1] == 1) && (k >= 3 && k <=5) ) {    // checks for dupes, segfaults if num > 9
-                        if( m >= 0 && m <= 2 ){
-                            printf("The left subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
-                            return 0;
-                        }
-                        else if( m >= 3 && m <= 5 ){
-                            printf("The left mid subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
-                            return 0;
-                        }
-                        else if( m >= 6 && m <= 8 ){
-                            printf("The left right subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
-                            return 0;
-                        }
-                    }
-                    else if((subgridValidate[currVal - 1] == 1) && (k >= 6 && k <=8)) {    // checks for dupes, segfaults if num > 9
-                        if( m >= 0 && m <= 2 ){
-                            printf("The bottom left subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
-                            return 0;
-                        }
-                        else if( m >= 3 && m <= 5 ){
-                            printf("The bottom mid subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
-                            return 0;
-                        }
-                        else if( m >= 6 && m <= 8 ){
-                            printf("The bottom right subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
-                            return 0;
-                        }
-                    }
-                    else //all subgrid have correct values.
-                    {
-                        return 1; // true
-                    }
-                }
-            }
-        }
-    }
+void *rowValidationRoutine(void *param) {
+    Sudoku* sudoku = (Sudoku*) param;
+    sudoku->res = rowValidation(sudoku);
+    return NULL;
 }
 
-void *vr(void *x) {
-    validateRows(x);
-    return NULL;    // Terminating Thread
-}
-void *vc(void *x) {
-    validateCols(x);
-    return NULL;    // Terminating Thread
-}
-void *vs(void *x) {
-    validateSubGrids(x);
-    return NULL;    // Terminating Thread
-}
-
-bool validSudokuGrid(int x[][9])
-{
-    int numThreads = 3;
-    pthread_t tid[3];
-
-    // pthread_create(&tid[0], NULL, vr, x);   // Creates thread to check if rows have digits 1 - 9 and if there are any duplicate numbers
-    // pthread_create(&tid[1], NULL, vc, x);   // Creates thread to check if rows have digits 1 - 9 and if there are any duplicate numbers
-    // pthread_create(&tid[2], NULL, vs, x);   // Creates thread to check if rows have digits 1 - 9 and if there are any duplicate numbers
-
-    // for(int i = 0; i < numThreads; i++) {
-    //     if(i == 0) {
-    //         pthread_create(&tid[i], NULL, vr, x);   // Creates thread to check if rows have digits 1 - 9 and if there are any duplicate numbers
-    //     } else if(i == 1) {
-    //         pthread_create(&tid[i], NULL, vc, x);   // Creates thread to check if cols have digits 1 - 9 and if there are any duplicate numbers
-    //     } else if( i == 2 ) {
-    //         pthread_create(&tid[i], NULL, vs, x);   // Creates thread to check if 3x3 has digits 1 - 9 and if there are any duplicate numbers
-    //     }
-    // }
-
-//     for (int i = 0; i < numThreads; i++) {
-//        pthread_join(tid[i], NULL);
-//     //    printf("Thread %10x joined\n", tid[i]);
-//        fflush(stdout);
-//    }
-
-    // printf("All Threads have exited using join(), exiting program....\n");
-    // fflush(stdout);
-    // exit(EXIT_SUCCESS);
-
-    return validateRows(x) + validateCols(x) + validateSubGrids(x); // if all true = valid 9x9, else = not valid 9x9
-    // return validateSubGrids(x);
+void *subgrid3x3ValidationRoutine(void *param) {
+    Sudoku* sudoku = (Sudoku*) param;
+    sudoku->res = subgrid3x3Validation(sudoku);
+    return NULL;
 }
