@@ -127,24 +127,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    // for(int i = 0; i < 9; i++) {
-    //     for(int j = 0; j < 9; j++) {
-    //         if(i == 0) {
-    //             printf("%d", threadIndx);
-    //             parameters *colData = (parameters *) malloc(sizeof(parameters));
-    //             colData->rows = i;
-    //             colData->cols = j;
-    //             pthread_create(&tid[threadIndx++], NULL, columnValidation(colData, sudoku_grid, validateThreads), NULL);
-    //         }
-    //         // if(j == 0) {
-    //         //     parameters *rowData = (parameters *) malloc(sizeof(parameters));
-    //         //     rowData->rows = i;
-    //         //     rowData->cols = j;
-    //         //     pthread_create(&tid[threadIndx++], NULL, rowValidation(rowData, sudoku_grid, validateThreads), NULL);
-    //         // }
-    //     }
-    // }
-
     for(int i = 0; i< 27; i++) {
         pthread_join(tid[i], NULL);
         // printf("Thread %10x joined\n", tid[i]);
@@ -345,7 +327,6 @@ int subgrid3x3Validation(Sudoku* sudoku) {
                     return 0;
                 }
                 else if ( j >= 6 && j <= 8 ){
-                    printf("%d %d",i,j);
                     printf("The top right subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
                     pthread_exit(NULL);
                     return 0;
@@ -358,7 +339,7 @@ int subgrid3x3Validation(Sudoku* sudoku) {
                     return 0;
                 }
                 else if ( j >= 3 && j <= 5 ){
-                    printf("The left mid subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
+                    printf("The mid subgrid does not have the required values (either a duplicate or value not in range of 1 - 9)\n");
                     pthread_exit(NULL);
                     return 0;
                 }
