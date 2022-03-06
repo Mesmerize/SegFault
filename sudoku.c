@@ -7,6 +7,8 @@
 #include <ctype.h>
 #include <getopt.h>
 #include <stdbool.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 typedef struct {
     int rows;
@@ -74,6 +76,9 @@ int main(int argc, char *argv[])
     int thread_count = 0;
     bool validSudokuGrid = true;
 
+    pid_t pid[27];
+    int value;
+
     Sudoku** thread_boxes = malloc(numThreads * sizeof(Sudoku*));
 
     if (argc == 1)
@@ -85,7 +90,64 @@ int main(int argc, char *argv[])
     parse_args(argc, argv);
 
     if(verbose && use_fork) {
+        int rowRet, colRet, squareRet;
+        unsigned short rowRes, colRes, squareRes = 0;
         printf("We are forking child processes as workers.\n");
+        readSudoku(sudoku.sudokuGrid, stdin);
+        printSudoku(sudoku_grid);
+        for(int i = 0; i < 9; i++) {
+            for(int j = 0; j < 9; j++) {
+                if(i % 3 == 0 && j % 3 == 0) {
+                    Sudoku* multThreads = (Sudoku*) malloc(sizeof(Sudoku));
+                    multThreads->rows = i;
+                    multThreads->cols = j;
+                    multThreads->sudokuGrid = sudoku.sudokuGrid;
+                    thread_boxes[i] = multThreads;
+                    pid[i] = fork();
+                    if(!(pid[i])) {
+                        subgrid3x3ValidationRoutine((void *) thread_boxes[i]);
+                        exit(thread_boxes[i]->res);
+                    }
+                }
+                if(i == 0) {
+                    Sudoku* multThreads = (Sudoku*) malloc(sizeof(Sudoku));
+                    multThreads->cols = j;
+                    multThreads->sudokuGrid = sudoku.sudokuGrid;
+                    thread_boxes[i] = multThreads;
+                    pid[i + 9] = fork();
+                    if(!(pid[i + 9])) {
+                        columnValidationRoutine((void *) thread_boxes[i]);
+                        exit(thread_boxes[i]->res);
+                    }
+                }
+                if(j == 0) {
+                    Sudoku* multThreads = (Sudoku*) malloc(sizeof(Sudoku));
+                    multThreads->rows = i;
+                    multThreads->sudokuGrid = sudoku.sudokuGrid;
+                    thread_boxes[i] = multThreads;
+                    pid[i + 18] = fork();
+                    if(!(pid[i + 18])) {
+                        rowValidationRoutine((void *) thread_boxes[i]);
+                        exit(thread_boxes[i]->res);
+                    }
+                }
+            }
+        }
+
+        for(int i = 0; i < 9; i++) {
+            waitpid(pid[i], &colRet, 0);
+            colRes = WEXITSTATUS(colRet);
+            waitpid(pid[i + 9], &rowRet, 0);
+            rowRes = WEXITSTATUS(colRet);
+            waitpid(pid[i + 18], &squareRet, 0);
+            squareRes = WEXITSTATUS(squareRet);
+        }
+        // printf("%d", colRes);
+        // printf("%d", rowRes);
+        // printf("%d", squareRet);
+        // for(int i = 0; i < 27; i++) {
+        //     printf("%d\n", thread_boxes[i]->res);
+        // }
     }
     else {
         printf("We are using worker threads.\n");
@@ -124,7 +186,7 @@ int main(int argc, char *argv[])
 
         for(int i = 0; i< 27; i++) {
             pthread_join(tid[i], NULL);
-            printf("Thread %10x joined\n", tid[i]);
+            // printf("Thread %10x joined\n", tid[i]);
             fflush(stdout);
         }
         for(int i = 0; i < numThreads; i++) {
@@ -150,17 +212,17 @@ void readSudoku(int (*sudokuGrid)[9], FILE *in)
 {
     fseek(in, -1, SEEK_CUR); // Seek to start off the current position of the file ptr
 
-    char entry;
+    char character;
     int i, j, totalVals = 0;
 
-    while ((fread(&entry, 1, 1, in)) > 0 && totalVals < 81)
+    while ((fread(&character, 1, 1, in)) > 0 && totalVals < 81)
     { // Read 81 digits from stdin file
-        if (entry != '\n')
+        if (character != '\n')
         { // Ignore newline
-            if (isdigit(entry))
+            if (isdigit(character))
             {
                 ++totalVals;
-                sudokuGrid[i][j] = entry - '0'; // Store integer representation
+                sudokuGrid[i][j] = character - '0'; // Store integer representation
                 ++j;
                 if (j == 9)
                 {
@@ -215,8 +277,8 @@ int columnValidation(Sudoku* sudoku) {
     // Base Case: if row is not zero to start out or column is greater than zero in the beginning output error
     if(rows != 0 || cols > 8) {
         fprintf(stderr, "Invalid row or column for the column subdivision: happened at row: %d, col: %d\n", rows + 1,cols + 1);
-        pthread_exit(NULL);
         return 0;
+        pthread_exit(NULL);
     }
 
     // Check to see if there are any duplicates in each column
@@ -234,8 +296,8 @@ int columnValidation(Sudoku* sudoku) {
         if(currVal < 1 || currVal > 9 || validationArr[currVal - 1] == 1) {
             // printf("entered here!\n");
             fprintf(stderr, "Column: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", cols + 1);
-            pthread_exit(NULL);
             return 0;
+            pthread_exit(NULL);
         }
         else {
             // printf("entered here hehe!\n");
@@ -260,8 +322,8 @@ int rowValidation(Sudoku* sudoku) {
     // If column does not start at 1 we have an error of out of bounds or if row is greater than 9 
     if(cols != 0 || rows > 8) {
         fprintf(stderr, "Invalid row or column for the column subdivision: happened at row: %d, col: %d\n", rows + 1,cols + 1);
-        pthread_exit(NULL);
         return 0;
+        pthread_exit(NULL);
     }
 
     // Check to see if there are any duplicates in each column
@@ -276,8 +338,8 @@ int rowValidation(Sudoku* sudoku) {
         // the worker thread will exit (terminate)
         if(currVal < 1 || currVal > 9 || validationArr[currVal - 1] == 1) {
             fprintf(stderr, "Row: %d does not have required values (either a duplicate or value not in range of 1 - 9) \n", rows + 1);
-            pthread_exit(NULL);
             return 0;
+            pthread_exit(NULL);
         }
         else {
             // printf("entered here hehe!\n");
@@ -297,8 +359,8 @@ int subgrid3x3Validation(Sudoku* sudoku) {
 
     if(rows > 6 || rows % 3 != 0 || cols > 6 || cols % 3 != 0) {
         fprintf(stderr, "Invalid row or column for subdivision: happened at row: %d, col: %d\n", rows + 1,cols + 1);
-        pthread_exit(NULL);
         return 0;
+        pthread_exit(NULL);
     }
     // Check to see if there are any duplicates in each column
     int validationArr[9] = {0};
