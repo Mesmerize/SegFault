@@ -140,6 +140,7 @@ int main(int argc, char *argv[])
                 }
             }
 
+            // While loop that reaps children (27 children)
             while((p = waitpid(-1, &value, 0)) != -1){
                 // printf( "%d: My child %d did exit(%d)\n", (int)getpid(), p, WEXITSTATUS(value));
 
@@ -192,6 +193,7 @@ int main(int argc, char *argv[])
             }
         }
 
+        // Joining and Terminating 27 threads
         for(int i = 0; i< 27; i++) {
             pthread_join(tid[i], NULL);
             // printf("Thread %10x joined\n", tid[i]);
