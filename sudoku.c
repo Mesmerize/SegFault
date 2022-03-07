@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
     int thread_count = 0;
     bool validSudokuGrid = true;
 
-    pid_t pid[27];
+    int p;
     int value;
 
     Sudoku** thread_boxes = malloc(numThreads * sizeof(Sudoku*));
@@ -89,66 +89,74 @@ int main(int argc, char *argv[])
     // Commented this out because this will be used later
     parse_args(argc, argv);
 
-    if(verbose && use_fork) {
-        int rowRet, colRet, squareRet;
-        unsigned short rowRes, colRes, squareRes = 0;
-        printf("We are forking child processes as workers.\n");
-        readSudoku(sudoku.sudokuGrid, stdin);
-        printSudoku(sudoku_grid);
-        for(int i = 0; i < 9; i++) {
-            for(int j = 0; j < 9; j++) {
-                if(i % 3 == 0 && j % 3 == 0) {
-                    Sudoku* multThreads = (Sudoku*) malloc(sizeof(Sudoku));
-                    multThreads->rows = i;
-                    multThreads->cols = j;
-                    multThreads->sudokuGrid = sudoku.sudokuGrid;
-                    thread_boxes[i] = multThreads;
-                    pid[i] = fork();
-                    if(!(pid[i])) {
-                        subgrid3x3ValidationRoutine((void *) thread_boxes[i]);
-                        exit(thread_boxes[i]->res);
+    if(use_fork) {
+
+            printf("We are forking child processes as workers.\n");
+            readSudoku(sudoku.sudokuGrid, stdin);
+            printSudoku(sudoku_grid);
+            
+            for(int i = 0; i < 9; i++) {
+                for(int j = 0; j < 9; j++) {
+                    if(i % 3 == 0 && j % 3 == 0) {
+                            p = fork();
+                            if(p == 0) {
+                                // printf("subgrids!\n");
+                                Sudoku* multThreads = (Sudoku*) malloc(sizeof(Sudoku));
+                                multThreads->rows = i;
+                                multThreads->cols = j;
+                                multThreads->sudokuGrid = sudoku.sudokuGrid;
+                                thread_boxes[i] = multThreads;
+                                thread_count++;
+                                // subgrid3x3ValidationRoutine((void *) thread_boxes[i]);
+                                exit(subgrid3x3Validation(thread_boxes[i]));
+                            }
                     }
-                }
-                if(i == 0) {
-                    Sudoku* multThreads = (Sudoku*) malloc(sizeof(Sudoku));
-                    multThreads->cols = j;
-                    multThreads->sudokuGrid = sudoku.sudokuGrid;
-                    thread_boxes[i] = multThreads;
-                    pid[i + 9] = fork();
-                    if(!(pid[i + 9])) {
-                        columnValidationRoutine((void *) thread_boxes[i]);
-                        exit(thread_boxes[i]->res);
+                    if(i == 0) {
+                            p = fork();
+                            if(p == 0) {
+                                // printf("col: %d\n", j);
+                                Sudoku* multThreads = (Sudoku*) malloc(sizeof(Sudoku));
+                                multThreads->cols = j;
+                                multThreads->sudokuGrid = sudoku.sudokuGrid;
+                                thread_boxes[i] = multThreads;
+                                thread_count++;
+                                // columnValidationRoutine((void *) thread_boxes[i]);
+                                exit(columnValidation(thread_boxes[i]));
+                            }
                     }
-                }
-                if(j == 0) {
-                    Sudoku* multThreads = (Sudoku*) malloc(sizeof(Sudoku));
-                    multThreads->rows = i;
-                    multThreads->sudokuGrid = sudoku.sudokuGrid;
-                    thread_boxes[i] = multThreads;
-                    pid[i + 18] = fork();
-                    if(!(pid[i + 18])) {
-                        rowValidationRoutine((void *) thread_boxes[i]);
-                        exit(thread_boxes[i]->res);
+                    if(j == 0) {
+                            p = fork();
+                            if(p == 0) {
+                                // printf("row: %d\n", i);
+                                Sudoku* multThreads = (Sudoku*) malloc(sizeof(Sudoku));
+                                multThreads->rows = i;
+                                multThreads->sudokuGrid = sudoku.sudokuGrid;
+                                thread_boxes[i] = multThreads;
+                                thread_count++;
+                                // rowValidationRoutine((void *) thread_boxes[i]);
+                                exit(rowValidation(thread_boxes[i]));
+                            }
                     }
                 }
             }
-        }
 
-        for(int i = 0; i < 9; i++) {
-            waitpid(pid[i], &colRet, 0);
-            colRes = WEXITSTATUS(colRet);
-            waitpid(pid[i + 9], &rowRet, 0);
-            rowRes = WEXITSTATUS(colRet);
-            waitpid(pid[i + 18], &squareRet, 0);
-            squareRes = WEXITSTATUS(squareRet);
+            while((p = waitpid(-1, &value, 0)) != -1){
+                // printf( "%d: My child %d did exit(%d)\n", (int)getpid(), p, WEXITSTATUS(value));
+
+                if(WEXITSTATUS(value) != 1) {
+                    printf("The input is not a valid Sudoku. \n");
+                    validSudokuGrid = false;
+                    break;
+                } 
+
+            }
+
+            if(validSudokuGrid) {
+                printf("The input is a valid Sudoku. \n");
+                validSudokuGrid = true;
+            }
+
         }
-        // printf("%d", colRes);
-        // printf("%d", rowRes);
-        // printf("%d", squareRet);
-        // for(int i = 0; i < 27; i++) {
-        //     printf("%d\n", thread_boxes[i]->res);
-        // }
-    }
     else {
         printf("We are using worker threads.\n");
         readSudoku(sudoku.sudokuGrid, stdin);
