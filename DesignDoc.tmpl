@@ -23,6 +23,7 @@ Erika Mendoza <mendoeri@sonoma.edu>
 >> Please cite any offline or online sources you consulted while
 >> preparing your submission, other than man pages, course
 >> text, lecture notes, and course staff.
+We looked at documentation. 
 
 
                THREADED SUDOKU CHECKER
@@ -107,7 +108,9 @@ it is reaped as soon as it has completed its task. This will prevent any resourc
 >> forking design cannot be as parallel as your threaded
 >> solution? If not, how many child processes may be
 >> running concurrently at any time?
-ANSWER: TBA
+Our forking design generates 27 children processes that are connected to one parent 
+process. These children are split up between rows(9 children processes), 
+columns (9 children processes) and the subgrids(9 children processes).
 
 ---- DATA STRUCTURES ----
 
@@ -136,18 +139,21 @@ column, and subgrid which is used to check validity.
 
 >> B5: Explain how the parent process knows when all the worker
 >> child have completed their work.
-ANSWER: TBA
+The parent process knows when all the worker children have completed their 
+work when waitpid() is called to communicate if each process has finished.
 
 >> B6: Explain how the parent process knows when a particular worker
 >> child has reported a property is missing.
-Answer: TBA
+The parent process knows when a particular worker child has reported a 
+property as missing by viewing the WEXITSTATUS(value).
 
 ---- RATIONALE ----
 
 >> B7: Explain how you ensured that your program has no resource leaks.
 >> List all the free-able resources and, for each, explain how you
 >> free them at the earliest possible time.
-Answer: TBA
+We terminate the children and join all threads after they have completed 
+their tasks.
 
 
 
