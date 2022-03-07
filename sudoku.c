@@ -1,3 +1,9 @@
+/*
+ *Authors: Brandon Luna, Erika Mendoza, and Phi Do
+ *File/Project: sudoku.c / First CS450 Project
+ *Date: 3/6/2022
+*/
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
