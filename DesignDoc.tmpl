@@ -1,5 +1,5 @@
 --------------------------------------------------------------------------
-Last Updated: 3/5/2022
+Last Updated: 3/6/2022
             +-------------------------+
             | CS 450                  |
             | PROJECT: SUDOKU CHECKER |
@@ -33,130 +33,70 @@ Erika Mendoza <mendoeri@sonoma.edu>
 >> A1: Given the problem decomposition described in the requirements
 >> for Part A, to achieve the maximum parallelism how many
 >> threads would need to be running concurrently?
-********
-Answer: To achieve the maximum parallelism, there needs to be 27 threads split between 
+To achieve the maximum parallelism, there needs to be 27 threads split between 
 the rows(9 threads), columns(9 threads) and the subgrids(9 threads). 
-********
 
 ---- DATA STRUCTURES ----
 
 >> A2: Copy here the declaration of each new or changed `struct', 
 >> `struct' member, global or static variable, `typedef', or enumeration.
 >> Identify the purpose of each in 2--25 words.
-********
-Answer: 
 typedef struct {
-   int rows;
-   int cols;
-   int res;
-   int (*sudokuGrid)[9];
+   int rows; //the rows of the sudoku grid
+   int cols; //the columns of the sudoku grid
+   int res; //stores a 1 or 0, used to determine if rows, cols, etc are valid
+   int (*sudokuGrid)[9]; //pointer to a grid
 } Sudoku;
-
-int rows is to represent the rows of the sudoku grid
-int cols is to represent the columns of the sudoku grid
-Int res stores a dynamic array of 1’s or 0’s, 1 represents true and 0 represents false. 
-This array determines if there is a valid row or column in the grid, which ultimately determines 
-if there is a valid or invalid sudoku. int sudokuGrid is a pointer to a grid, this is essentially 
-the grid that is parsed and we use this as the sudoku we are determining is invalid or valid.
-********
 
 ---- FUNCTIONS ----
 
 >> A3: Provide a prototype and documentation for each function
 >> you have introduced to support this portion of the project.
 >> Use the Google Style Guide for function documentation.
-Answer: 
-********
-void readSudoku(int (*sudokuGrid)[9], FILE *in); 
-void printSudoku(int x[][9]);
-int columnValidation(Sudoku* sudoku);
-void *columnValidationRoutine(void *sudoku);
-int rowValidation(Sudoku* sudoku);
-void *rowValidationRoutine(void *sudoku);
-int subgrid3x3Validation(Sudoku* sudoku);
-void  *subgrid3x3ValidationRoutine(void* sudoku);
-
-void readSudoku(int (*sudokuGrid)[9], FILE *in);
-This function reads in stdin values from the .txt files.
-
-void printSudoku(int x[][9]);
-This function prints the stdin values from the .txt files as a grid.
-
-Int columnValidation(Sudoku* sudoku);
-This function checks each grid column for duplicate values (indexes 1 - 9).
-
-void *columnValidationRoutine(void *sudoku);
-This function is used along with the columnValidation() function to verify if each 
-column is valid. If columnValidation() has not found duplicate values in any column, 
-it would return valid for all columns. If columnValidation() has found duplicate values 
-in any column, it would return invalid for the column(s) containing duplicates.
-
-int rowValidation(Sudoku* sudoku);
-This function checks each grid row for duplicate values (index 1 - 9).
-
-void *rowValidationRoutine(void *sudoku);
-This function is used along with the rowValidation() function to verify if each row 
-is valid. If rowValidation() has not found duplicate values in any row, it would 
-return valid for all rows. If rowValidation() has found duplicate values in any row, 
-it would return invalid for the row(s) containing duplicates.
-
-int subgrid3x3Validation(Sudoku* sudoku);
-This function checks each subgrid(the nine 3x3 sections) for duplicate values.
-
-void  *subgrid3x3ValidationRoutine(void* sudoku);
-This function is used along with the subgrid3x3Validation() function to verify if 
-each subgrid is valid. If subgrid3x3Validation() has not found duplicate values in 
-any subgrid, it would return valid for all subgrids. If subgrid3x3Validation() has 
-found duplicate values in any subgrid, it would return invalid for the subgrid(s) 
-containing duplicates.
-********
+void readSudoku(int (*sudokuGrid)[9], FILE *in); //reads value from stdin
+void printSudoku(int x[][9]); //helper function that prints the grid
+int columnValidation(Sudoku* sudoku); //checks column for duplicate values
+void *columnValidationRoutine(void *sudoku); //checks if column is valid
+int rowValidation(Sudoku* sudoku); //checks row for duplicate values
+void *rowValidationRoutine(void *sudoku); //checks if row is valid
+int subgrid3x3Validation(Sudoku* sudoku); // checks each subgrid for duplicate values
+void  *subgrid3x3ValidationRoutine(void* sudoku); //checks if subgrid is valid
 
 ---- ALGORITHMS ----
 
 >> A4: Briefly describe how you communicated to each worker thread
 >> the work it should perform, as a void *
-********
-Answer: Each worker thread does not exactly communicate with each other. Each 
+Each worker thread does not exactly communicate with each other. Each 
 thread is created and runs its task in parallel to one another.
-********
 
 >> A5: Briefly describe the function(s) run by each worker. Explain
 >> if any memory is shared among threads.
-********
-Answer: Due to the fact that the threads run in parallel and do not connect, 
+Due to the fact that the threads run in parallel and do not connect, 
 no memory is shared among the threads. Each thread is assigned a pointer to each 
 row, column, or subGrid. These threads check the validation of either a row, 
 column, or subGrid. In addition, the threads run in parallel and return a boolean 
 value (1 or 0). These bool values are stored in an array, which is used to determine 
 the validity of the sudoku grid.
-********
 
 >> A6: Explain how the main thread knows when all the worker
 >> threads have completed their work.
-********
-Answer: The main thread knows when all the worker threads have completed their 
+The main thread knows when all the worker threads have completed their 
 work with pthread_join() because this is used as a wait while each thread is completed.
-********
+
 >> A7: Explain how the main thread knows when a particular worker
 >> thread has reported a property as missing.
-********
-Answer: The main thread knows when a particular thread has reported a property as 
-missing because each thread created is responsible for each row, column, and 
-subgrid in having the correct values with no conflicts before exiting with 
-pthread_exit(NULL). 
-********
+It writes it into (communicates with) a struct and that struct is shared 
+between threads and main (for our code).
 
 ---- RATIONALE ----
 
 >> A8: Explain how you ensured that your program has no resource leaks.
 >> List all the free-able resources and, for each, explain how you
 >> free them at the earliest possible time.
-********
-Answer: Threads are a free-able resource. We prevent threads from creating resource 
+Threads are a free-able resource. We prevent threads from creating resource 
 leaks by reaping the threads with pthread_join() after the threads have completed 
 their task on their assigned row, column, or subgrid. When we fork a child process, 
 it is reaped as soon as it has completed its task. This will prevent any resource leaks.
-********
 
                FORKING SUDOKU CHECKER
                =======================
@@ -167,7 +107,7 @@ it is reaped as soon as it has completed its task. This will prevent any resourc
 >> forking design cannot be as parallel as your threaded
 >> solution? If not, how many child processes may be
 >> running concurrently at any time?
-Answer: TBA
+ANSWER: TBA
 
 ---- DATA STRUCTURES ----
 
@@ -175,7 +115,7 @@ Answer: TBA
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 2--25 words.
 >> Do not repeat anything already described in A2.
-Answer: NA, we only used a single struct, and it is used for the threading partition of this project.
+NA, we only used a single struct, and it is used for the threading partition of this project.
 
 ---- FUNCTIONS ----
 
@@ -183,20 +123,20 @@ Answer: NA, we only used a single struct, and it is used for the threading parti
 >> you have introduced to support this portion of the project.
 >> Use the Google Style Guide for function documentation.
 >> Do not repeat anything already described in A3.
-Answer:
+Same as A3. Utilized the functions to work with the forking portion.
      
-     *need to add more after the forking functions
-
 ---- ALGORITHMS ----
 
 >> B4: Briefly describe the method of communicating with each child
 >> process and if the function(s) run by each child were different than
 >> the functions used by the child threads in Part A.
-Answer: TBA
+We expanded the same functions from Part A to fork() and generated 27 child 
+processes attached to one parent. Each child process has the results of each row, 
+column, and subgrid which is used to check validity. 
 
 >> B5: Explain how the parent process knows when all the worker
 >> child have completed their work.
-Answer: TBA
+ANSWER: TBA
 
 >> B6: Explain how the parent process knows when a particular worker
 >> child has reported a property is missing.
